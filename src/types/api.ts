@@ -47,6 +47,8 @@ export interface EventoSismicoDTO {
   valorMagnitud: number;
   estadoActual: EstadoEnum;
   estadoDescripcion: string;
+  magnitudRichterDescripcion: string | null;
+  magnitudRichterValor: number | null;
   clasificacion: string | null;
   origen: string | null;
   alcance: string | null;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, Alert, Spin, Typography, Card } from 'antd';
-import { ReloadOutlined, ThunderboltOutlined, ArrowUpOutlined, ArrowDownOutlined, EnterOutlined } from '@ant-design/icons';
+import { ReloadOutlined, ThunderboltOutlined, ArrowUpOutlined, ArrowDownOutlined, EnterOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import type { EventoSismicoSinRevisionDTO } from '../types/api';
 import { api } from '../services/api';
 
@@ -8,9 +8,10 @@ const { Title, Text } = Typography;
 
 interface EventsListProps {
   onSelectEvent: (event: EventoSismicoSinRevisionDTO) => void;
+  onViewAllEvents: () => void;
 }
 
-export default function EventsList({ onSelectEvent }: EventsListProps) {
+export default function EventsList({ onSelectEvent, onViewAllEvents }: EventsListProps) {
   const [events, setEvents] = useState<EventoSismicoSinRevisionDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -185,13 +186,22 @@ export default function EventsList({ onSelectEvent }: EventsListProps) {
           </Space>
         }
         extra={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadEvents}
-            title="Ctrl+R para actualizar"
-          >
-            Actualizar
-          </Button>
+          <Space>
+            <Button
+              icon={<UnorderedListOutlined />}
+              onClick={onViewAllEvents}
+              type="default"
+            >
+              Ver Todos los Eventos
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={loadEvents}
+              title="Ctrl+R para actualizar"
+            >
+              Actualizar
+            </Button>
+          </Space>
         }
       >
         <Space direction="vertical" size="middle" style={{ width: '100%', marginBottom: 16 }}>
@@ -220,6 +230,17 @@ export default function EventsList({ onSelectEvent }: EventsListProps) {
             className: index === selectedIndex ? 'ant-table-row-selected' : '',
           })}
         />
+
+        {events.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Alert
+              message="No hay eventos pendientes de revisión"
+              description="✅ Todos los eventos han sido revisados o no hay eventos disponibles."
+              type="info"
+              showIcon
+            />
+          </div>
+        )}
       </Card>
     </div>
   );

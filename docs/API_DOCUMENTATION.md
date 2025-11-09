@@ -85,6 +85,8 @@ Content-Type: application/json
     "valorMagnitud": 5.2,
     "estadoActual": "PTE_DE_REVISION",
     "estadoDescripcion": "PteDeRevision",
+    "magnitudRichterDescripcion": "Moderado",
+    "magnitudRichterValor": 5.5,
     "clasificacion": "Tectónico",
     "origen": "Natural",
     "alcance": "Regional",

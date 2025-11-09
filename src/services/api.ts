@@ -3,6 +3,7 @@ import type {
   EventoSismicoSinRevisionDTO,
   DatosRegistradosDTO,
   SismogramaDTO,
+  EventoSismicoDTO,
 } from '../types/api';
 
 // Use empty string in development (proxy handles it), or env variable for production
@@ -14,6 +15,10 @@ export const api = {
     const response = await fetch(`${BASE_URL}/api/eventos/sin-revision`);
     if (!response.ok) {
       throw new Error('Failed to fetch events pending review');
+    }
+
+    if (response.status === 204) {
+      return [];
     }
     return response.json();
   },
@@ -58,5 +63,14 @@ export const api = {
     if (!response.ok) {
       throw new Error('Failed to reject event');
     }
+  },
+
+  // 6. List all events with complete details
+  getAllEventos: async (): Promise<EventoSismicoDTO[]> => {
+    const response = await fetch(`${BASE_URL}/api/eventos/`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch all events');
+    }
+    return response.json();
   },
 };

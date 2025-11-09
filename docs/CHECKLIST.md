@@ -247,18 +247,6 @@ curl http://localhost:8080/
 
 ---
 
-## 📊 Métricas del Proyecto
-
-- **Componentes creados**: 3 (EventsList, EventDetails, ConfirmationModal)
-- **Servicios**: 1 (API service)
-- **Endpoints utilizados**: 5
-- **Líneas de código**: ~1200
-- **Archivos TypeScript**: 6
-- **Archivos CSS**: 4
-- **Atajos de teclado**: 10+
-
----
-
 ## 🎓 Cumplimiento de Requisitos Académicos
 
 - [x] Implementa caso de uso #23 completo
@@ -273,7 +261,5 @@ curl http://localhost:8080/
 ---
 
 **Estado del Proyecto: ✅ COMPLETO Y LISTO PARA USAR**
-
-**Fecha de finalización**: 9 de Noviembre, 2024
 **Tecnologías**: React 19, TypeScript 5.9, Vite 7
 **API Backend**: Spring Boot (puerto 8080)

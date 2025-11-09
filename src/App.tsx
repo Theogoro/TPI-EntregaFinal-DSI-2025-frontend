@@ -4,12 +4,13 @@ import type { EventoSismicoSinRevisionDTO } from './types/api';
 import { api } from './services/api';
 import EventsList from './components/EventsList';
 import EventDetails from './components/EventDetails';
+import AllEvents from './components/AllEvents';
 import ConfirmationModal from './components/ConfirmationModal';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
 
-type AppState = 'list' | 'confirm-block' | 'details';
+type AppState = 'list' | 'confirm-block' | 'details' | 'all-events';
 
 function App() {
   const [state, setState] = useState<AppState>('list');
@@ -51,6 +52,14 @@ function App() {
     setSelectedEvent(null);
   };
 
+  const handleViewAllEvents = () => {
+    setState('all-events');
+  };
+
+  const handleBackToList = () => {
+    setState('list');
+  };
+
   return (
     <ConfigProvider
       theme={{
@@ -88,11 +97,13 @@ function App() {
         </Header>
 
         <Content style={{ padding: '24px 50px', background: '#f0f2f5' }}>
-          {state === 'list' && <EventsList onSelectEvent={handleSelectEvent} />}
+          {state === 'list' && <EventsList onSelectEvent={handleSelectEvent} onViewAllEvents={handleViewAllEvents} />}
 
           {state === 'details' && selectedEvent && (
             <EventDetails event={selectedEvent} onComplete={handleComplete} />
           )}
+
+          {state === 'all-events' && <AllEvents onBack={handleBackToList} />}
         </Content>
 
         <Footer style={{ textAlign: 'center', background: '#001529', color: 'rgba(255,255,255,0.65)' }}>

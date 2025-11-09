@@ -175,4 +175,4 @@ npm run lint     # Linter de código
 
 ---
 
-**Desarrollado con ❤️ para UTN DSI 2024**
+**Desarrollado con ❤️ para UTN DSI 2025**

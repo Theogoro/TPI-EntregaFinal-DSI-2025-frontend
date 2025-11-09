@@ -12,13 +12,25 @@ import {
   Typography,
   Row,
   Col,
+  Tabs,
 } from 'antd';
 import {
   ThunderboltOutlined,
   GlobalOutlined,
   EditOutlined,
   ArrowRightOutlined,
+  LineChartOutlined,
+  TableOutlined,
 } from '@ant-design/icons';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import type {
   EventoSismicoSinRevisionDTO,
   DatosRegistradosDTO,
@@ -37,6 +49,7 @@ interface EventDetailsProps {
 type Step =
   | 'loading'
   | 'show-data'
+  | 'show-seismograms'
   | 'ask-map'
   | 'ask-modify'
   | 'ask-action'
@@ -63,11 +76,14 @@ export default function EventDetails({ event, onComplete }: EventDetailsProps) {
   }, []);
 
   useEffect(() => {
-    if (step === 'show-data' || step === 'ask-map' || step === 'ask-modify' || step === 'ask-action') {
+    if (step === 'show-data' || step === 'show-seismograms' || step === 'ask-map' || step === 'ask-modify' || step === 'ask-action') {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (showModal) return;
 
         if (step === 'show-data' && e.key === 'Enter') {
+          e.preventDefault();
+          handleShowSeismograms();
+        } else if (step === 'show-seismograms' && e.key === 'Enter') {
           e.preventDefault();
           handleAskMap();
         } else if (step === 'ask-map' && (e.key === 'n' || e.key === 'N')) {
@@ -104,6 +120,10 @@ export default function EventDetails({ event, onComplete }: EventDetailsProps) {
       setError(err instanceof Error ? err.message : 'Error loading event details');
       setStep('error');
     }
+  };
+
+  const handleShowSeismograms = () => {
+    setStep('show-seismograms');
   };
 
   const handleAskMap = () => {
@@ -207,6 +227,61 @@ export default function EventDetails({ event, onComplete }: EventDetailsProps) {
     );
   }
 
+  // TODO: Esta visualización usa datos simulados para demostración.
+  // En el futuro, se implementará la generación real de sismogramas a partir de los datos de la API.
+  // Generate realistic seismic wave data for visualization (MOCK DATA)
+  const generateRealisticSeismogram = () => {
+    const data = [];
+    const totalPoints = 200;
+    const epicenterPoint = 100; // Punto donde ocurre el evento principal
+    
+    for (let i = 0; i < totalPoints; i++) {
+      let amplitude = 0;
+      
+      // Pre-evento: ruido de fondo muy bajo
+      if (i < epicenterPoint - 20) {
+        amplitude = (Math.random() - 0.5) * 0.5;
+      }
+      // Ondas P (primarias): primeras ondas sísmicas
+      else if (i >= epicenterPoint - 20 && i < epicenterPoint - 5) {
+        const distance = i - (epicenterPoint - 20);
+        amplitude = Math.sin(distance * 0.8) * (distance * 0.3) + (Math.random() - 0.5) * 0.5;
+      }
+      // Evento principal: mayor amplitud con oscilaciones fuertes
+      else if (i >= epicenterPoint - 5 && i < epicenterPoint + 30) {
+        const distance = i - epicenterPoint;
+        const envelope = Math.exp(-Math.abs(distance) / 15); // Decaimiento exponencial
+        amplitude = Math.sin(distance * 1.2) * envelope * 20 + 
+                   Math.sin(distance * 2.5) * envelope * 15 +
+                   Math.sin(distance * 4) * envelope * 8 +
+                   (Math.random() - 0.5) * 2;
+      }
+      // Ondas S (secundarias): después del evento principal
+      else if (i >= epicenterPoint + 30 && i < epicenterPoint + 60) {
+        const distance = i - (epicenterPoint + 30);
+        const envelope = Math.exp(-distance / 20);
+        amplitude = Math.sin(distance * 0.9) * envelope * 8 +
+                   Math.sin(distance * 2) * envelope * 4 +
+                   (Math.random() - 0.5) * 1;
+      }
+      // Post-evento: decaimiento gradual
+      else {
+        const distance = i - (epicenterPoint + 60);
+        const envelope = Math.exp(-distance / 30);
+        amplitude = Math.sin(distance * 0.5) * envelope * 2 + 
+                   (Math.random() - 0.5) * 0.5;
+      }
+      
+      data.push({
+        index: i,
+        velocidad: amplitude,
+        tiempo: i * 0.1, // 0.1 segundos por muestra
+      });
+    }
+    
+    return data;
+  };
+
   const seismogramColumns = [
     {
       title: 'Longitud',
@@ -259,8 +334,8 @@ export default function EventDetails({ event, onComplete }: EventDetailsProps) {
         </Descriptions>
       </Card>
 
-      {/* Registered Data */}
-      {datosRegistrados && (
+      {/* Registered Data - Only in show-data step */}
+      {step === 'show-data' && datosRegistrados && (
         <Card title="Datos Registrados" bordered={false}>
           <Descriptions column={2} bordered>
             <Descriptions.Item label="Clasificación">
@@ -279,42 +354,150 @@ export default function EventDetails({ event, onComplete }: EventDetailsProps) {
         </Card>
       )}
 
-      {/* Seismograms */}
-      {sismogramas.length > 0 && (
-        <Card title="Sismogramas por Estación" bordered={false}>
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            {sismogramas.map((sisma, index) => (
-              <Card key={index} type="inner" title={`📡 ${sisma.estacion}`} size="small">
-                <Table
-                  columns={seismogramColumns}
-                  dataSource={sisma.datos.slice(0, 5).map((dato, idx) => ({ ...dato, key: idx }))}
-                  pagination={false}
-                  size="small"
-                />
-                {sisma.datos.length > 5 && (
-                  <Alert
-                    message={`... y ${sisma.datos.length - 5} registros más`}
-                    type="info"
-                    showIcon
-                    style={{ marginTop: 12 }}
-                  />
-                )}
-              </Card>
-            ))}
-          </Space>
-        </Card>
-      )}
-
       {/* Step-based Actions */}
       {step === 'show-data' && (
         <Card>
           <Space direction="vertical" align="center" style={{ width: '100%' }}>
-            <Text type="secondary">Presione Enter para continuar</Text>
-            <Button type="primary" size="large" onClick={handleAskMap} icon={<ArrowRightOutlined />}>
-              Continuar (Enter)
+            <Text type="secondary">Presione Enter para ver los sismogramas</Text>
+            <Button type="primary" size="large" onClick={handleShowSeismograms} icon={<ArrowRightOutlined />}>
+              Ver Sismogramas (Enter)
             </Button>
           </Space>
         </Card>
+      )}
+
+      {/* Seismograms Step - Dedicated step for viewing seismograms */}
+      {step === 'show-seismograms' && sismogramas.length > 0 && (
+        <>
+          <Card title={
+            <Space>
+              <ThunderboltOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
+              <Title level={3} style={{ margin: 0 }}>
+                Sismogramas por Estación
+              </Title>
+            </Space>
+          } bordered={false}>
+            <Alert
+              message="Datos Sísmicos Registrados"
+              description={`Se encontraron ${sismogramas.length} estaciones con datos sísmicos para este evento.`}
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              {sismogramas.map((sisma, index) => (
+                <Card 
+                  key={index} 
+                  type="inner" 
+                  title={`📡 ${sisma.estacion}`} 
+                  size="small"
+                  extra={<Tag color="blue">{sisma.datos.length} registros</Tag>}
+                >
+                  <Tabs
+                    defaultActiveKey="graph"
+                    items={[
+                      {
+                        key: 'graph',
+                        label: (
+                          <span>
+                            <LineChartOutlined /> Gráfico
+                          </span>
+                        ),
+                        children: (
+                          <div style={{ width: '100%' }}>
+                            <Alert
+                              message="Visualización de Demostración"
+                              description="Este gráfico muestra un sismograma simulado con fines demostrativos. La integración con datos reales de la API se implementará en una versión futura."
+                              type="warning"
+                              showIcon
+                              style={{ marginBottom: 16 }}
+                            />
+                            <div style={{ width: '100%', height: 300, background: '#fff', border: '1px solid #d9d9d9' }}>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart
+                                  data={generateRealisticSeismogram()}
+                                  margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                                  <XAxis 
+                                    dataKey="tiempo" 
+                                    tick={{ fontSize: 11 }}
+                                    label={{ value: 'Tiempo (segundos)', position: 'insideBottom', offset: -15, style: { fontSize: 13, fontWeight: 'bold' } }}
+                                    domain={[0, 20]}
+                                  />
+                                  <YAxis 
+                                    domain={[-25, 25]}
+                                    tick={{ fontSize: 11 }}
+                                    label={{ value: 'Amplitud', angle: -90, position: 'insideLeft', style: { fontSize: 13, fontWeight: 'bold' } }}
+                                  />
+                                  <Tooltip 
+                                    contentStyle={{ 
+                                      backgroundColor: 'rgba(255, 255, 255, 0.98)', 
+                                      border: '1px solid #bbb',
+                                      borderRadius: '4px',
+                                      padding: '10px',
+                                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                                    }}
+                                    formatter={(value: number) => [`${value.toFixed(2)}`, 'Amplitud']}
+                                    labelFormatter={(label: number) => `Tiempo: ${label.toFixed(2)}s`}
+                                  />
+                                  <Line 
+                                    type="monotone" 
+                                    dataKey="velocidad" 
+                                    stroke="#000000" 
+                                    strokeWidth={1}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                  />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        ),
+                      },
+                      {
+                        key: 'table',
+                        label: (
+                          <span>
+                            <TableOutlined /> Tabla de Datos
+                          </span>
+                        ),
+                        children: (
+                          <>
+                            <Table
+                              columns={seismogramColumns}
+                              dataSource={sisma.datos.slice(0, 10).map((dato, idx) => ({ ...dato, key: idx }))}
+                              pagination={false}
+                              size="small"
+                              bordered
+                            />
+                            {sisma.datos.length > 10 && (
+                              <Alert
+                                message={`Mostrando 10 de ${sisma.datos.length} registros totales`}
+                                type="info"
+                                showIcon
+                                style={{ marginTop: 12 }}
+                              />
+                            )}
+                          </>
+                        ),
+                      },
+                    ]}
+                  />
+                </Card>
+              ))}
+            </Space>
+          </Card>
+          
+          <Card>
+            <Space direction="vertical" align="center" style={{ width: '100%' }}>
+              <Text type="secondary">Presione Enter para continuar</Text>
+              <Button type="primary" size="large" onClick={handleAskMap} icon={<ArrowRightOutlined />}>
+                Continuar (Enter)
+              </Button>
+            </Space>
+          </Card>
+        </>
       )}
 
       {step === 'ask-map' && (
